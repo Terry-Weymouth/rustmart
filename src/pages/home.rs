@@ -52,7 +52,7 @@ impl Component for Home {
         true
     }
 
-    fn view(self) -> Html {
+    fn view(&self) -> Html {
         let source = &self.state.products;
         let html_products: Vec<Html> =
             source.iter()
