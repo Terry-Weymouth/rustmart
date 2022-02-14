@@ -4,7 +4,7 @@ use yew::prelude::*;
 struct Product {
     id: i32,
     name: String,
-    description: String,
+//    description: String,
     image: String,
     price: f64,
 }
@@ -37,14 +37,14 @@ impl Component for Home {
             Product {
                 id: 1,
                 name: "Apple".to_string(),
-                description: "An apple a day keeps the doctor away".to_string(),
+//                description: "An apple a day keeps the doctor away".to_string(),
                 image: "/products/apple.png".to_string(),
                 price: 3.65,
             },
             Product {
                 id: 2,
                 name: "Banana".to_string(),
-                description: "An old banana leaf was once young and green".to_string(),
+//                description: "An old banana leaf was once young and green".to_string(),
                 image: "/products/banana.png".to_string(),
                 price: 7.99,
             },
