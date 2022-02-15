@@ -1,31 +1,27 @@
 use yew::prelude::*;
-
-#[derive(Clone)]
-struct Product {
-    id: i32,
-    name: String,
-//    description: String,
-    image: String,
-    price: f64,
-}
-
-struct CartProduct {
-    product: Product,
-    quantity: i32,
-}
+use crate::api;
+use crate::types::{CartProduct, Product};
+use anyhow::Error;
+use yew::format::Json;
+use yew::services::fetch::FetchTask;
 
 struct State {
     products: Vec<Product>,
     cart_products: Vec<CartProduct>,
-}
+    get_products_error: Option<Error>,
+    get_products_loaded: bool,}
 
 pub struct Home {
     state: State,
-    link: ComponentLink<Self>
+    link: ComponentLink<Self>,
+    task: Option<FetchTask>,
 }
 
 pub enum Msg {
     AddToCart(i32),
+    GetProducts,
+    GetProductsSuccess(Vec<Product>),
+    GetProductsError(Error),
 }
 
 impl Component for Home {
@@ -33,35 +29,48 @@ impl Component for Home {
     type Properties = ();
 
     fn create(_: Self::Properties, link: ComponentLink<Self>) -> Self {
-        let products: Vec<Product> = vec![
-            Product {
-                id: 1,
-                name: "Apple".to_string(),
-//                description: "An apple a day keeps the doctor away".to_string(),
-                image: "/products/apple.png".to_string(),
-                price: 3.65,
-            },
-            Product {
-                id: 2,
-                name: "Banana".to_string(),
-//                description: "An old banana leaf was once young and green".to_string(),
-                image: "/products/banana.png".to_string(),
-                price: 7.99,
-            },
-        ];
+        let products = vec![];
         let cart_products = vec![];
+
+        link.send_message(Msg::GetProducts);
 
         Self {
             state: State {
                 products,
                 cart_products,
+                get_products_error: None,
+                get_products_loaded: false,
             },
-            link
+            link,
+            task: None,
         }
     }
 
     fn update(&mut self, message: Self::Message) -> ShouldRender {
         match message {
+            Msg::GetProducts => {
+                self.state.get_products_loaded = false;
+                let handler = self.link
+                    .callback(move |response: api::FetchResponse<Vec<Product>>| {
+                        let (_, Json(data)) = response.into_parts();
+                        match data {
+                            Ok(products) => Msg::GetProductsSuccess(products),
+                            Err(err) => Msg::GetProductsError(err),
+                        }
+                    });
+                self.task = Some(api::get_products(handler));
+                true
+            }
+            Msg::GetProductsSuccess(products) => {
+                self.state.products = products;
+                self.state.get_products_loaded = true;
+                true
+            }
+            Msg::GetProductsError(error) => {
+                self.state.get_products_error = Some(error);
+                self.state.get_products_loaded = true;
+                true
+            }
             Msg::AddToCart(product_id) => {
                 let product = self
                     .state
@@ -96,29 +105,44 @@ impl Component for Home {
         let source = &self.state.products;
         let products: Vec<Html> =
             source.iter()
-            .map(|product: &Product| {
-                let product_id = product.id;
-                html! {
-                    <div>
-                        <img src={&product.image as &str}/>
-                        <div>{&product.name}</div>
-                        <div>{"$"}{&product.price}</div>
-                        <button onclick=self.link.callback(move |_| Msg::AddToCart(product_id))>{"Add To Cart"}</button>
-                    </div>
-                }
-            })
-            .collect();
+                .map(|product: &Product| {
+                    let product_id = product.id;
+                    html! {
+                        <div>
+                            <img src={&product.image as &str}/>
+                            <div>{&product.name}</div>
+                            <div>{"$"}{&product.price}</div>
+                            <button onclick=self.link.callback(move |_| Msg::AddToCart(product_id))>{"Add To Cart"}</button>
+                        </div>
+                    }
+                })
+                .collect();
         let cart_value = self
             .state
             .cart_products
             .iter()
             .fold(0.0, |acc, cp| acc + (cp.quantity as f64 * cp.product.price));
 
-        html! {
+        let option1: Html = html! {
+            <div>{"Loading ..."}</div>
+        };
+        let option2: Html = html! {
+            <div>
+                <span>{"Error loading products! :("}</span>
+            </div>
+        };
+        let option3: Html = html! {
             <div>
                 <span>{format!("Cart Value: {:.2}", cart_value)}</span>
                 <span>{products}</span>
             </div>
+        };
+        if !self.state.get_products_loaded {
+            option1
+        } else if let Some(_) = self.state.get_products_error {
+            option2
+        } else {
+            option3
         }
     }
 }
