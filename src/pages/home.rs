@@ -1,6 +1,7 @@
 use yew::prelude::*;
 use crate::api;
 use crate::types::{CartProduct, Product};
+use crate::components::ProductCard;
 use anyhow::Error;
 use yew::format::Json;
 use yew::services::fetch::FetchTask;
@@ -108,12 +109,8 @@ impl Component for Home {
                 .map(|product: &Product| {
                     let product_id = product.id;
                     html! {
-                        <div>
-                            <img src={&product.image as &str}/>
-                            <div>{&product.name}</div>
-                            <div>{"$"}{&product.price}</div>
-                            <button onclick=self.link.callback(move |_| Msg::AddToCart(product_id))>{"Add To Cart"}</button>
-                        </div>
+                        <ProductCard product={product}
+                        on_add_to_cart=self.link.callback(move |_| Msg::AddToCart(product_id))/>
                     }
                 })
                 .collect();
