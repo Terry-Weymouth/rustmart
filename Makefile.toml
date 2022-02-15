@@ -9,6 +9,10 @@ script = [
 
 [tasks.restore2]
 script = [
+    "cp static_required/styles.css static/"
+]
+[tasks.restore3]
+script = [
     "cp -R static_required//products static/"
 ]
 
@@ -21,4 +25,5 @@ dependencies = [
     "build",
     "restore1",
     "restore2",
+    "restore3",
 ]
