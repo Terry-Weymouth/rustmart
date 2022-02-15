@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 pub struct Product {
     pub id: i32,
     pub name: String,
-//    pub description: String,
+    pub description: String,
     pub image: String,
     pub price: f64,
 }
